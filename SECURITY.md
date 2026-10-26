@@ -1,45 +1,50 @@
-Describe here all the security policies in place on this repository to help your contributors to handle security issues efficiently.
+# Security Policy
 
 ## Goods practices to follow
 
-:warning:**You must never store credentials information into source code or config file in a GitHub repository**
+⚠️You must never store credentials information into source code or config file in a GitHub repository
+
 - Block sensitive data being pushed to GitHub by git-secrets or its likes as a git pre-commit hook
 - Audit for slipped secrets with dedicated tools
 - Use environment variables for secrets in CI/CD (e.g. GitHub Secrets) and secret managers in production
 
-# Security Policy
-
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are currently being supported with security updates.
+Only the latest released version of this project currently receives security updates.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| Latest  | ✅        |
+| Older versions | ❌ |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
-Tell them where to go, how often they can expect to get an update on a reported vulnerability, what to expect if the vulnerability is accepted or declined, etc.
+Please do not report security vulnerabilities through public GitHub issues.
 
-You can ask for support by contacting oss@thalesgroup.com
+To report a vulnerability, use GitHub's private vulnerability reporting feature:
 
-## Disclosure policy
+**Security → Report a vulnerability**
 
-Define the procedure for what a reporter who finds a security issue needs to do in order to fully disclose the problem safely, including who to contact and how.
+If private vulnerability reporting is unavailable, contact: security@opensource.thalesgroup.com
 
-## Security Update policy
+Please include, when possible:
 
-Define how you intend to update users about new security vulnerabilities as they are found.
+- a description of the vulnerability;
+- the affected version;
+- steps to reproduce the issue;
+- its potential impact;
+- any suggested mitigation or fix.
 
-## Security related configuration
+Please allow the maintainers reasonable time to investigate and release a correction before publicly disclosing the vulnerability.
 
-Settings users should consider that would impact the security posture of deploying this project, such as HTTPS, authorization and many others.
+## Disclosure Process
 
-## Known security gaps & future enhancements
+The maintainers will:
 
-Security improvements you haven’t gotten to yet.
-Inform users those security controls aren’t in place, and perhaps suggest they contribute an implementation
+1. acknowledge receipt of the report;
+2. investigate and assess its severity;
+3. prepare and test a correction when necessary;
+4. coordinate disclosure with the reporter;
+5. publish a security advisory when appropriate.
+
+Thank you for helping keep this project and its users secure.

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "air3dex-project"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "matplotlib==3.10.3",
+  "numpy==2.3.1",
+  "pandas==2.3.0",
+  "scipy==1.16.0",
+  "tqdm==4.67.1",
+  "xarray==2024.11.0",
+  "pyproj==3.7.1",
+  "h5py==3.13.0",
+  "rich==15.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

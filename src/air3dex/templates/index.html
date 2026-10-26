@@ -1,0 +1,340 @@
+<!-- Copyright (c) 2025-2026 Thales Services Numeriques (TSN).
+
+This file is part of Air3Dex
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. -->
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <title>Air3Dex Monitoring</title>
+  <link rel="icon" href="../static/assets/logo_final.png" type="image/x-icon">
+
+  <!-- Cesium -->
+  <script src="https://cdn.jsdelivr.net/npm/cesium@1.130.1/Build/Cesium/Cesium.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/cesium@1.130.1/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Babylon.js -->
+  <script src="https://cdn.jsdelivr.net/npm/babylonjs@8.14.0/babylon.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.2.0/dist/chartjs-chart-matrix.min.js"></script>
+
+  <!-- Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-3.7.0.min.js"></script>
+
+  <!-- CDN ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+  <!-- D3.js -->
+  <script src="https://d3js.org/d3.v4.js"></script>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="../static/styles.css"/>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- THREE.js -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.177.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.177.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <!-- Delaunay 3D -->
+  <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6/dist/d3-delaunay.min.js"></script>
+
+</head>
+
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">
+      <img src="../static/assets/logo_final.png" alt="Logo" width=auto height="30">
+      <span class="highlight">Air3Dex</span> Monitoring
+    </a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="index.html" id="accueil-link">Accueil</a></li>
+        <li><a href="#perfs" id="perf-link">Performances</a></li>
+        <li><a href="#info" id="info-link">À propos</a></li>
+      </ul>
+    </nav>
+    <!--
+    <button class="cta" id="toggleViewBtn" type="button">Isovolume View</button>-->
+  </header>
+
+
+  <main class="main">
+    <aside class="left-panel">
+      <h1><span class="highlight">Air3Dex</span> Platform</h1>
+      <p class="subtitle">Plateforme web interactive de visualisation 3D de la qualité de l’air</p>
+      <p>Offre un rendu volumétrique temps réel à partir de données CAMS, enrichi par des analyses statistiques avancées.</p>
+      <hr>
+
+      <!--<button class="cta" id="form-link" type="button">Afficher le formulaire ⤦</button>-->
+
+      <form id="data-form">
+        <label class="form-label" for="chooseFile" id="chooseFile">Format des données : CZML, JSON</label>
+        <input class="form-control mb-3" type="file" id="data-file" name="data-file" accept=".czml,.json" required>
+
+        <button class="cta" type="submit" id="submit-btn">Chargement du jeu de données</button>
+
+        <button id="loading-spinner-btn" class="cta" type="button" disabled>
+          <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+          <span role="status">Chargement…</span>
+        </button>
+      </form>
+
+      <div id="scale-options">
+        <section class="scale-section mt-4">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="scale-title d-flex align-items-center mb-0">
+              <img src="../static/assets/icons/palette.svg" alt="icon couches" class="icon me-2">
+              Contraste & Légende
+            </h4>
+            <img src="../static/assets/icons/info-circle-blanc.svg"
+                alt="Aide contraste"
+                data-bs-toggle="modal"
+                data-bs-target="#contrastInfoModal"
+                style="width: 35px; height: 35px; cursor: pointer;">
+          </div>
+
+          <div class="scale-content mt-3">
+            <label for="scale-mode" class="form-label">Mode de contraste :</label>
+            <select id="scale-mode" class="form-select form-select-sm mb-2">
+              <option value="auto" selected>Automatique (min-max)</option>
+              <option value="reference">Référence</option>
+              <option value="manual">Manuel</option>
+              <option value="percentile">Percentile (2%-98%)</option>
+              <option value="log">Logarithmique</option>
+            </select>
+
+            <div id="manual-scale-inputs" class="manual-inputs mt-2" style="display: none;">
+              <div class="d-flex align-items-center">
+                <input type="number" id="manual-min" class="form-control form-control-sm mb-1" placeholder="Min">
+                <input type="number" id="manual-max" class="form-control form-control-sm mb-1" placeholder="Max">
+                <button class="lilcta btn btn-primary btn-sm" id="apply-manual-scale">Appliquer</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-check form-switch mt-3 d-flex align-items-center gap-2">
+            <input class="form-check-input" type="checkbox" role="switch" id="legende-switch" checked>
+            <label class="form-check-label" for="legende-switch">Légende activée</label>
+          </div>
+
+          <!-- Palette + bouton reverse alignés à droite -->
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <label for="color-palette" class="mb-0">Palette de couleurs :</label>
+
+            <div id="color-palette-dropdown" class="dropdown">
+              <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="dropdownPalette" data-bs-toggle="dropdown" aria-expanded="false">
+                <span id="selected-palette-name">Défaut</span>
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="dropdownPalette" id="palette-list"></ul>
+            </div>
+
+            <button id="reverse-palette-btn" class="lilcta btn btn-secondary btn-sm">Inverser</button>
+          </div>
+
+          <!-- Contrôle Alpha -->
+          <div class="mt-3">
+            <label for="alpha-slider" class="form-label">Transparence des données :</label>
+
+            <!-- Slider + input numérique -->
+            <div class="d-flex align-items-center">
+              <input type="range" class="form-range me-2 flex-grow-1" id="alpha-slider" min="0" max="100" step="1" value="85">
+
+              <div class="input-group input-group-sm" style="width:130px;">
+                <input type="number" id="alpha-value" class="form-control" min="0" max="100" step="1" value="85">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+
+            <!-- Labels alignés exactement aux extrémités -->
+            <div class="d-grid" style="grid-template-columns: 1fr 1fr;">
+              <small class="small-text">&lt; Transparent</small>
+              <small class="small-text" style="margin-left: 10px;">Opaque &gt;</small>
+            </div>
+          </div>
+
+          <label for="transp-mode" class="form-label mt-3">Mode transparence :</label>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <select id="transp-mode"  class="form-select form-select-sm">
+              <option value="manual-transp">Manuel</option>
+              <option value="dyn-transp">Dynamique</option>
+            </select>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <!-- Colonne centrale – Cesium -->
+    <section id="cesium-wrapper">
+      <div id="perf-stats" class="perf-panel">
+        <span id="fps">FPS —</span> │
+        <span id="loadTime">Load —</span> │
+        <span id="tilesLeft">Tiles —</span> │
+        <span id="jsHeap">JS —</span>
+      </div>
+
+      <div id="minimap-container">
+        <div id="minimap"></div>
+        <div id="minimap-cross">
+          <div class="line vertical"></div>
+          <div class="line horizontal"></div>
+        </div>
+      </div>
+
+
+      <div id="cesiumContainer"></div>
+      <canvas id="isoContainer"></canvas> <!-- canvas pour babylon -->
+
+      <div id="color-legend">
+        <div id="color-bar"></div>
+        <div class="labels">
+          <span id="min-value">——</span>
+          <span id="max-value">——</span>
+        </div>
+      </div>
+    </section>
+
+    <aside id="right-panel", class="right-panel">
+      <div id="data-layers" class="mt-4">
+        <h4>
+          <img src="../static/assets/icons/layer.svg" alt="icon couches" class="icon">
+          Couche active
+        </h4>
+        <ul id="data-list" class="list-group"></ul>
+      </div>
+
+      <hr>
+
+      <div id="summary" class="summary">
+        <h4>
+          <img src="../static/assets/icons/book-bookmark.svg" alt="icon couches" class="icon">
+          Résumé des données
+        </h4>
+        <div id="data-summary"></div>
+      </div>
+
+      <hr>
+
+      <h4>
+        <img src="../static/assets/icons/value-sum.svg" alt="icon couches" class="icon">
+        Statistiques
+      </h4>
+      <div class="mb-1" style="display: grid; grid-template-columns: 1fr 1fr; row-gap: 0.25rem;">
+        <label for="decimals">Décimales :</label>
+        <label for="notation">Notation :</label>
+      </div>
+      <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+        <input type="number" id="decimals" class="form-control form-control-sm" value="2" min="0" max="10" step="1">
+        <select id="notation"  class="form-select form-select-sm">
+          <option value="fixed">Décimal</option>
+          <option value="exp">Exponentiel</option>
+        </select>
+      </div>
+
+      <div id="stats">
+        <p><strong>Min :</strong> <span id="stat-min">——</span></p>
+        <p><strong>Max :</strong> <span id="stat-max">——</span></p>
+        <p><strong>Moyenne :</strong> <span id="stat-mean">——</span></p>
+        <p><strong>Écart-type :</strong> <span id="stat-stdev">——</span></p>
+      </div>
+
+      <hr>
+
+      <h4>
+        <img src="../static/assets/icons/chart.svg" alt="icon graphique" class="icon">
+        Graphiques
+      </h4>
+
+      <button id="btn-toggle-profile" class="lilcta">Voir profil moyen général</button>
+
+
+      <div id="graph-sections" class="mt-3">
+        <div class="graph-section">
+          <canvas id="canvas-profile" class="graph-canvas"></canvas>
+        </div>
+
+        <div class="graph-section mt-4">
+          <canvas id="canvas-histogram" class="graph-canvas"></canvas>
+        </div>
+
+        <div class="graph-section mt-4">
+          <div id="canvas-heatmap" class="graph-canvas"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Modal Explication des modes de contraste -->
+  <div class="modal fade" id="contrastInfoModal" tabindex="-1" aria-labelledby="contrastInfoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="contrastInfoLabel" style="font-weight: bold;">
+            <img src="../static/assets/icons/palette.svg" alt="icon contraste" class="icon me-2">
+            Explication des modes de contraste
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+
+        <div class="modal-body">
+          <p>Les modes de contraste contrôlent la manière dont les valeurs sont transformées en couleurs :</p>
+          <ul>
+            <li><strong>Automatique (min-max) :</strong> utilise les valeurs minimale et maximale du jeu de données pour ajuster l’échelle de couleurs.</li>
+            <li>
+              <strong>Référence :</strong> applique une échelle fixe, utile pour comparer plusieurs jeux de données.<br>
+              <div class="mt-2 text-center">
+                <img src="../static/assets/indice_ATMO.png" alt="Échelle de référence" class="img-fluid" style="max-height: 200px;">
+                <p class="text-muted small mt-1">Indice multipolluant de la qualité de l’air (ATMO), établi par l'AASQA</p>
+              </div>
+            </li>
+            <li><strong>Manuel :</strong> vous permet de définir vos propres bornes minimale et maximale.</li>
+            <li><strong>Percentile (2%-98%) :</strong> ignore les 2% de valeurs extrêmes afin de mieux visualiser la majorité des données.</li>
+          </ul>
+          <p class="text-muted small">💡 Astuce : adapter le contraste peut révéler des détails cachés dans le jeu de données.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../static/config.js"></script>
+  <script type="module" src="../static/viewer.js"></script>
+  <script type="module" src="../static/main.js"></script>
+  <script type="module" src="../static/isoThree.js"></script>
+  <script type="module" src="../static/isoBabylon.js"></script>
+  <script type="module" src="../static/chartAnalyzer.js"></script>
+  <script type="module" src="../static/chartAnalyzerPlotly.js"></script>
+  <script type="module" src="../static/loadJsonData.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
